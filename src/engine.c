@@ -115,7 +115,7 @@ static int threadSetup( GLFWwindow window, sstProgram *program, sstDrawableSet *
     args.window = window;
     args.program = program;
     glfwMakeContextCurrent(NULL);
-    sgfeInitDrawBuffers();
+    sgfeInitDrawBuffers(2);
     thrd_create(&renderThread, rendererSetup, &args);
     gameLogicSetup(window, set);
     thrd_join(renderThread, NULL);

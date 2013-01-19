@@ -29,7 +29,7 @@ int renderLoop( GLFWwindow window, sstProgram *program ) {
     sgfeEntity *buffer, *b;
     int buf_size, i;
     glfwMakeContextCurrent(window);
-    buffer = sgfeGetBuffer(0); /* Renderer is a consumer */
+    buffer = sgfeGetConsumerBuffer();
     sstPerspectiveMatrix_(60.0f, 1.0f, 5.0f, 500.0f, proj);
     sstActivateProgram(program);
     glEnable(GL_DEPTH_TEST);

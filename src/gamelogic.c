@@ -92,7 +92,7 @@ sgfeEntityList *passives ) {
     sgfeEntity *buffer, *b;
     sgfeEntityList *e;
     int buf_size;
-    buffer = sgfeGetBuffer(1); /* Game loop is a producer */
+    buffer = sgfeGetProducerBuffer();
     lastTime = glfwGetTime();
     while( buffer ) {
         /* Step 1: Set up the clock */

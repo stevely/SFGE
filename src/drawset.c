@@ -12,14 +12,17 @@ static int buffer1_size;
 static sgfeEntity buffer2[10];
 static int buffer2_size;
 
-#define THREAD_COUNT 2
-
+static int threadCount;
 static mtx_t bufLock;
 static cnd_t bufCond;
 static int finishedCount = 0;
 static int signalExit = 0;
 
-int sgfeInitDrawBuffers() {
+/*
+ * Initializes the draw buffers for the given number of threads.
+ */
+int sgfeInitDrawBuffers( int threads ) {
+    threadCount = threads;
     if( mtx_init(&bufLock, mtx_plain) != thrd_success ) {
         return -1;
     }
@@ -29,15 +32,29 @@ int sgfeInitDrawBuffers() {
     return 0;
 }
 
-sgfeEntity * sgfeGetBuffer( int producer ) {
-    if( producer ) {
-        return buffer1;
-    }
-    else {
-        return buffer2;
-    }
+/*
+ * Get the buffer to be used by the producer thread. For obvious reasons, there
+ * should only be one producer thread. This function must be called before any
+ * buffer swaps, or its behavior is undefined.
+ */
+sgfeEntity * sgfeGetProducerBuffer() {
+    return buffer1;
 }
 
+/*
+ * Get the buffer to be used by a consumer thread. There can be multiple
+ * consumer threads running at once, with the caveat that none of them modify
+ * the data in the draw buffer.
+ */
+sgfeEntity * sgfeGetConsumerBuffer() {
+    return buffer2;
+}
+
+/*
+ * Signal to the other threads that they should exit. sgfeSwapBuffers() must be
+ * called before the signalling thread can exit to ensure that every thread is
+ * notified.
+ */
 void sgfeSignalExit() {
     mtx_lock(&bufLock);
     signalExit = 1;
@@ -65,7 +82,7 @@ sgfeEntity * sgfeSwapBuffers( sgfeEntity *buf, int *size ) {
     }
     finishedCount++;
     /* Waiting for other threads */
-    if( finishedCount == THREAD_COUNT ) {
+    if( finishedCount == threadCount ) {
         /* Last thread, signal for wakeup */
         finishedCount = 0;
         cnd_broadcast(&bufCond);

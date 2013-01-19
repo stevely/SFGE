@@ -20,7 +20,7 @@ SFGE_S= engine.c renderer.c gamelogic.c drawset.c
 SFGE= game
 
 # Extra libs
-EXTRAS= sst tinycthread
+EXTRAS= sst sdf tinycthread
 
 # Helper function
 getobjs= $(patsubst %.c,$(BUILD)/%.o,$(1))
