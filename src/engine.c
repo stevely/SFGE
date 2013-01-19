@@ -37,21 +37,21 @@ static GLubyte simpleQuadIndices[] = { 0, 1, 2,
 
 /* Setup */
 
-/* Struct for passing args into the renderer thread */
-struct renderArgs {
+/* Struct for passing args into the gamelogic thread */
+struct gamelogicArgs {
     GLFWwindow window;
-    sstProgram *program;
+    sstDrawableSet *set;
 };
 
-static int rendererSetup( void *args ) {
-    struct renderArgs *rargs;
-    rargs = (struct renderArgs*)args;
-    return renderLoop(rargs->window, rargs->program);
+static int rendererSetup( GLFWwindow window, sstProgram *program ) {
+    return renderLoop(window, program);
 }
 
-static int gameLogicSetup( GLFWwindow window, sstDrawableSet *set ) {
+static int gameLogicSetup( void *arguments ) {
+    struct gamelogicArgs *args;
     sgfeEntity player;
     sgfeEntityList side[4];
+    args = (struct gamelogicArgs*)arguments;
     player.pos[0] = 0.0f;
     player.pos[1] = 0.0f;
     player.pos[2] = 0.0f;
@@ -68,7 +68,7 @@ static int gameLogicSetup( GLFWwindow window, sstDrawableSet *set ) {
     side[0].entity.rot[0] = 0.0f;
     side[0].entity.rot[1] = M_PI / 2;
     side[0].entity.rot[2] = 0.0f;
-    side[0].entity.set = set;
+    side[0].entity.set = args->set;
     side[0].entity.vel[0] = 0.0f;
     side[0].entity.vel[1] = 0.0f;
     side[0].entity.vel[2] = 0.0f;
@@ -79,7 +79,7 @@ static int gameLogicSetup( GLFWwindow window, sstDrawableSet *set ) {
     side[1].entity.rot[0] = 0.0f;
     side[1].entity.rot[1] = M_PI / -2;
     side[1].entity.rot[2] = 0.0f;
-    side[1].entity.set = set;
+    side[1].entity.set = args->set;
     side[1].entity.vel[0] = 0.0f;
     side[1].entity.vel[1] = 0.0f;
     side[1].entity.vel[2] = 0.0f;
@@ -90,7 +90,7 @@ static int gameLogicSetup( GLFWwindow window, sstDrawableSet *set ) {
     side[2].entity.rot[0] = M_PI / -2;
     side[2].entity.rot[1] = 0.0f;
     side[2].entity.rot[2] = 0.0f;
-    side[2].entity.set = set;
+    side[2].entity.set = args->set;
     side[2].entity.vel[0] = 0.0f;
     side[2].entity.vel[1] = 0.0f;
     side[2].entity.vel[2] = 0.0f;
@@ -101,24 +101,23 @@ static int gameLogicSetup( GLFWwindow window, sstDrawableSet *set ) {
     side[3].entity.rot[0] = M_PI / 2;
     side[3].entity.rot[1] = 0.0f;
     side[3].entity.rot[2] = 0.0f;
-    side[3].entity.set = set;
+    side[3].entity.set = args->set;
     side[3].entity.vel[0] = 0.0f;
     side[3].entity.vel[1] = 0.0f;
     side[3].entity.vel[2] = 0.0f;
     side[3].next = NULL;
-    return gameLoop(window, &player, NULL, side);
+    return gameLoop(args->window, &player, NULL, side);
 }
 
 static int threadSetup( GLFWwindow window, sstProgram *program, sstDrawableSet *set ) {
-    thrd_t renderThread;
-    struct renderArgs args;
+    thrd_t logicThread;
+    struct gamelogicArgs args;
     args.window = window;
-    args.program = program;
-    glfwMakeContextCurrent(NULL);
+    args.set = set;
     sgfeInitDrawBuffers(2);
-    thrd_create(&renderThread, rendererSetup, &args);
-    gameLogicSetup(window, set);
-    thrd_join(renderThread, NULL);
+    thrd_create(&logicThread, gameLogicSetup, &args);
+    rendererSetup(window, program);
+    thrd_join(logicThread, NULL);
     return 0;
 }
 

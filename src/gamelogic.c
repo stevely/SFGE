@@ -100,7 +100,7 @@ sgfeEntityList *passives ) {
         elapsedTime = currentTime - lastTime;
         lastTime = currentTime;
         /* Step 2: Handle input */
-        glfwPollEvents();
+        /*glfwPollEvents();*/
         if( isQuitting(window) ) {
             sgfeSignalExit();
         }

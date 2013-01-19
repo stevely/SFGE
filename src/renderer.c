@@ -28,7 +28,6 @@ int renderLoop( GLFWwindow window, sstProgram *program ) {
     GLfloat proj[16], base[16], model[16];
     sgfeEntity *buffer, *b;
     int buf_size, i;
-    glfwMakeContextCurrent(window);
     buffer = sgfeGetConsumerBuffer();
     sstPerspectiveMatrix_(60.0f, 1.0f, 5.0f, 500.0f, proj);
     sstActivateProgram(program);
@@ -64,6 +63,12 @@ int renderLoop( GLFWwindow window, sstProgram *program ) {
         }
         glFlush();
         glfwSwapBuffers(window);
+        /* Event polling has to be done here due to rendering being done on the
+         * main thread. This is necessary because GLFW is not thread safe, and
+         * while checking key/mouse state in a separate thread will work,
+         * actually polling will not.
+         */
+        glfwPollEvents();
         buffer = sgfeSwapBuffers(buffer, &buf_size);
     }
     return 0;
