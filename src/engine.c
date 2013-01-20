@@ -14,137 +14,10 @@
 #include "drawset.h"
 #include "tinycthread.h"
 
-#define TRIANGLE_COUNT 12
-#define QUAD_COUNT 6
-#define VERTS_PER_QUAD 4
-#define VERTS_PER_TRIANGLE 3
-#define VERT_COUNT (TRIANGLE_COUNT * VERTS_PER_TRIANGLE)
-
-/*
-static const char *shaders[] = {"shaders/test3.vert", "shaders/test3.frag"};
-static const int shader_count = 2;
-
-static GLfloat simpleQuad[] = {  50.0f,  50.0f, 0.0f,
-                                -50.0f,  50.0f, 0.0f,
-                                -50.0f, -50.0f, 0.0f,
-                                 50.0f, -50.0f, 0.0f };
-
-static GLfloat simpleQuadNorms[] = { 0.0f, 0.0f, 1.0f,
-                                     0.0f, 0.0f, 1.0f,
-                                     0.0f, 0.0f, 1.0f,
-                                     0.0f, 0.0f, 1.0f };
-
-static GLubyte simpleQuadIndices[] = { 0, 1, 2,
-                                       0, 2, 3 };
-*/
-
 /* Setup */
 
 static int rendererSetup( GLFWwindow window, sstProgram *program ) {
     return renderLoop(window, program);
-}
-
-/* Struct for passing args into the gamelogic thread */
-struct gamelogicArgs {
-    GLFWwindow window;
-    sstDrawableSet **sets;
-};
-
-static int gameLogicSetup( void *arguments ) {
-    struct gamelogicArgs *args;
-    sgfeEntity player;
-    sgfeEntityList side[4];
-    sstDrawableSet *set;
-    args = (struct gamelogicArgs*)arguments;
-    set = args->sets[0];
-    player.pos[0] = 0.0f;
-    player.pos[1] = 0.0f;
-    player.pos[2] = 0.0f;
-    player.rot[0] = 0.0f;
-    player.rot[1] = 0.0f;
-    player.rot[2] = 0.0f;
-    player.set = NULL;
-    player.vel[0] = 0.0f;
-    player.vel[1] = 0.0f;
-    player.vel[2] = 0.0f;
-    side[0].entity.pos[0] = -50.0f;
-    side[0].entity.pos[1] = 0.0f;
-    side[0].entity.pos[2] = 0.0f;
-    side[0].entity.rot[0] = 0.0f;
-    side[0].entity.rot[1] = M_PI / 2;
-    side[0].entity.rot[2] = 0.0f;
-    side[0].entity.set = set;
-    side[0].entity.vel[0] = 0.0f;
-    side[0].entity.vel[1] = 0.0f;
-    side[0].entity.vel[2] = 0.0f;
-    side[0].next = &side[1];
-    side[1].entity.pos[0] = 50.0f;
-    side[1].entity.pos[1] = 0.0f;
-    side[1].entity.pos[2] = 0.0f;
-    side[1].entity.rot[0] = 0.0f;
-    side[1].entity.rot[1] = M_PI / -2;
-    side[1].entity.rot[2] = 0.0f;
-    side[1].entity.set = set;
-    side[1].entity.vel[0] = 0.0f;
-    side[1].entity.vel[1] = 0.0f;
-    side[1].entity.vel[2] = 0.0f;
-    side[1].next = &side[2];
-    side[2].entity.pos[0] = 0.0f;
-    side[2].entity.pos[1] = -50.0f;
-    side[2].entity.pos[2] = 0.0f;
-    side[2].entity.rot[0] = M_PI / -2;
-    side[2].entity.rot[1] = 0.0f;
-    side[2].entity.rot[2] = 0.0f;
-    side[2].entity.set = set;
-    side[2].entity.vel[0] = 0.0f;
-    side[2].entity.vel[1] = 0.0f;
-    side[2].entity.vel[2] = 0.0f;
-    side[2].next = &side[3];
-    side[3].entity.pos[0] = 0.0f;
-    side[3].entity.pos[1] = 50.0f;
-    side[3].entity.pos[2] = 0.0f;
-    side[3].entity.rot[0] = M_PI / 2;
-    side[3].entity.rot[1] = 0.0f;
-    side[3].entity.rot[2] = 0.0f;
-    side[3].entity.set = set;
-    side[3].entity.vel[0] = 0.0f;
-    side[3].entity.vel[1] = 0.0f;
-    side[3].entity.vel[2] = 0.0f;
-    side[3].next = NULL;
-    return gameLoop(args->window, &player, NULL, side);
-}
-
-/* Unused, non-static to prevent compiler errors */
-/*
-int old_threadSetup( GLFWwindow window, sstProgram *program, sstDrawableSet *set ) {
-    thrd_t logicThread;
-    struct gamelogicArgs args;
-    args.window = window;
-    args.set = set;
-    sgfeInitDrawBuffers(2);
-    thrd_create(&logicThread, gameLogicSetup, &args);
-    rendererSetup(window, program);
-    thrd_join(logicThread, NULL);
-    return 0;
-}
-*/
-
-static int threadSetup( GLFWwindow window, sstProgram *program, sdfNode *data,
-sstDrawableSet **sets, char **setNames, int setCount) {
-    thrd_t logicThread;
-    struct gamelogicArgs args;
-    /* Unused args */
-    if( data ) {}
-    if( setNames ) {}
-    if( setCount ) {}
-    /* End unused args */
-    args.window = window;
-    args.sets = sets;
-    sgfeInitDrawBuffers(2);
-    thrd_create(&logicThread, gameLogicSetup, &args);
-    rendererSetup(window, program);
-    thrd_join(logicThread, NULL);
-    return 0;
 }
 
 static void populateFloatTriplets( GLfloat *values, sdfNode *data ) {
@@ -159,6 +32,109 @@ static void populateFloatTriplets( GLfloat *values, sdfNode *data ) {
         values++;
         data = data->next;
     }
+}
+
+static void populateEntity( sgfeEntity *entity, sdfNode *data,
+sstDrawableSet **sets, char **setNames, int setCount ) {
+    sdfNode *n;
+    int i;
+    n = getChildren(data, "model");
+    if( n ) {
+        /* Model lookup */
+        for( i = 0; i < setCount; i++ ) {
+            if( strcmp(setNames[i], n->data) == 0 ) {
+                break;
+            }
+        }
+        if( i >= setCount ) {
+            entity->set = NULL;
+        }
+        else {
+            entity->set = sets[i];
+        }
+    }
+    /* Positions */
+    populateFloatTriplets(entity->pos, getChildren(data, "position"));
+    /* Rotation */
+    populateFloatTriplets(entity->rot, getChildren(data, "rotation"));
+    /* Velocity */
+    entity->vel[0] = 0.0f;
+    entity->vel[1] = 0.0f;
+    entity->vel[2] = 0.0f;
+}
+
+/* Struct for passing args into the gamelogic thread */
+struct gamelogicArgs {
+    GLFWwindow window;
+    sdfNode *data;
+    sstDrawableSet **sets;
+    char **setNames;
+    int setCount;
+};
+
+static int gameLogicSetup( void *arguments ) {
+    struct gamelogicArgs *args;
+    sgfeEntity player;
+    sdfNode *data, *d;
+    sstDrawableSet **sets;
+    char **setNames;
+    int setCount;
+    sgfeEntityList *dynamics, *d_end;
+    sgfeEntityList *statics, *s_end; /* static's a keyword... */
+    dynamics = d_end = statics = s_end = NULL;
+    /* Step 1: Get our args */
+    args = (struct gamelogicArgs*)arguments;
+    data = args->data;
+    sets = args->sets;
+    setNames = args->setNames;
+    setCount = args->setCount;
+    /* Step 2: Populate player */
+    populateEntity(&player, getChildren(data, "playerStart"), sets, setNames,
+                   setCount);
+    data = getChildren(data, "entities");
+    /* Step 3: Populate dynamics entities */
+    for( d = getChildren(data, "dynamic"); d; d = d->next ) {
+        if( dynamics == NULL ) {
+            dynamics = d_end = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            d_end->next = NULL;
+        }
+        else {
+            d_end->next = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            d_end = d_end->next;
+            d_end->next = NULL;
+        }
+        populateEntity(&d_end->entity, d->child, sets, setNames, setCount);
+    }
+    /* Step 4: Populate static entities */
+    for( d = getChildren(data, "static"); d; d = d->next ) {
+        if( statics == NULL ) {
+            statics = s_end = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            s_end->next = NULL;
+        }
+        else {
+            s_end->next = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            s_end = s_end->next;
+            s_end->next = NULL;
+        }
+        populateEntity(&s_end->entity, d->child, sets, setNames, setCount);
+    }
+    return gameLoop(args->window, &player, dynamics, statics);
+}
+
+static int threadSetup( GLFWwindow window, sstProgram *program, sdfNode *data,
+sstDrawableSet **sets, char **setNames, int setCount) {
+    thrd_t logicThread;
+    struct gamelogicArgs args;
+    args.window = window;
+    args.data = data;
+    args.sets = sets;
+    args.setNames = setNames;
+    args.setCount = setCount;
+    sgfeInitDrawBuffers(2);
+    thrd_create(&logicThread, gameLogicSetup, &args);
+    rendererSetup(window, program);
+    thrd_join(logicThread, NULL);
+    return 0;
 }
 
 static int countIndices( sdfNode *data ) {
@@ -321,28 +297,6 @@ static sstProgram * extractProgram( sdfNode *tree ) {
     free(frags);
     return result;
 }
-
-/* Unused, non-static to prevent compiler errors */
-/*
-int old_dataSetup( GLFWwindow window ) {
-    sstProgram *program;
-    sstDrawableSet *set;
-    int result;
-    * Create shader program *
-    program = sstNewProgram(shaders, shader_count);
-    if( !program ) {
-        printf("Failed to start: couldn't create program!\n");
-        return 1;
-    }
-    * Set up data *
-    set = sstDrawableSetElements(program, GL_TRIANGLES, 4, simpleQuadIndices,
-                                 GL_UNSIGNED_BYTE, 3 * 2,
-                                 "in_Position", simpleQuad,
-                                 "in_Normal", simpleQuadNorms);
-    result = threadSetup(window, program, set);
-    return result;
-}
-*/
 
 int dataSetup( GLFWwindow window, const char *filepath ) {
     sstProgram *program;

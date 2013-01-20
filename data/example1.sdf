@@ -1,0 +1,100 @@
+models
+    quad
+        type
+            triangles
+        positions
+            50 50 0
+            -50 50 0
+            -50 -50 0
+            50 -50 0
+        normals
+            0 0 1
+            0 0 1
+            0 0 1
+            0 0 1
+        indices
+            0 1 2
+            0 2 3
+playerStart
+    position
+        0 0 0
+    rotation
+        0 0 0
+entities
+    dynamic
+    static
+        0
+            model
+                quad
+            position
+                -50 0 0
+            rotation
+                0 1.5707963267948966 0
+        1
+            model
+                quad
+            position
+                50 0 0
+            rotation
+                0 -1.5707963267948966 0
+        2
+            model
+                quad
+            position
+                0 -50 0
+            rotation
+                -1.5707963267948966 0 0
+        3
+            model
+                quad
+            position
+                0 50 0
+            rotation
+                1.5707963267948966 0 0
+shaders
+    vertex
+        "
+#version 150 core
+
+uniform mat4 projectionMatrix;
+uniform mat4 cameraMatrix;
+uniform mat4 modelTranslate;
+uniform mat4 modelRotate;
+
+in vec3 in_Position;
+in vec3 in_Normal;
+
+out vec3 pass_Position;
+out vec3 pass_Normal;
+
+void main(void) {
+    vec4 position = modelTranslate * modelRotate * vec4(in_Position, 1.0);
+    gl_Position = projectionMatrix * cameraMatrix * position;
+    pass_Position = position.xyz;
+    pass_Normal = (modelRotate * vec4(in_Normal, 1.0)).xyz;
+}"
+    fragment
+        "
+#version 150 core
+
+uniform vec3 cameraPos;
+uniform vec3 lightPos1;
+
+in vec3 pass_Position;
+in vec3 pass_Normal;
+
+out vec4 out_Color;
+
+const float pi = 3.14159265358979323846264;
+
+void main(void) {
+    vec3 lightDiff1 = normalize(lightPos1 - pass_Position);
+    vec3 viewer = cameraPos - pass_Position;
+    float d = length(viewer);
+    viewer = normalize(viewer);
+    vec3 reflect = 2 * dot(lightDiff1, pass_Normal) * pass_Normal - lightDiff1;
+    float angleDiff = dot(pass_Normal, lightDiff1) * 0.9;
+    float angleSpec = dot(reflect, viewer) * 0.3;
+    float color = clamp((angleDiff + angleSpec) * pow(10, (-0.001 * d)), 0, 1);
+    out_Color = vec4(color, color, color, 1.0);
+}"
