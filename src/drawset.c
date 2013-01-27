@@ -3,20 +3,24 @@
  * By Steven Smith
  */
 
+#include <stdlib.h>
 #include "drawset.h"
 #include "tinycthread.h"
 
 /* The draw buffers */
-static sgfeEntity buffer1[10];
-static int buffer1_size;
-static sgfeEntity buffer2[10];
-static int buffer2_size;
+static sgfeRenderBuffers buffer1;
+static sgfeRenderBuffers buffer2;
+
+/* We store pointers to the last element of the last buffer for each buffer,
+ * allowing us to see when we need to allocate memory. */
 
 static int threadCount;
 static mtx_t bufLock;
 static cnd_t bufCond;
 static int finishedCount = 0;
 static int signalExit = 0;
+
+#define SFGE_BUF_CHUNK_SIZE 100
 
 /*
  * Initializes the draw buffers for the given number of threads.
@@ -29,7 +33,57 @@ int sgfeInitDrawBuffers( int threads ) {
     if( cnd_init(&bufCond) != thrd_success ) {
         return -1;
     }
+    buffer1.lights = (sgfeLight*)malloc(sizeof(sgfeLight)
+                     * SFGE_BUF_CHUNK_SIZE);
+    buffer1.light_size = SFGE_BUF_CHUNK_SIZE;
+    buffer1.light_count = 0;
+    buffer1.drawables = (sgfeDrawable*)malloc(sizeof(sgfeDrawable)
+                        * SFGE_BUF_CHUNK_SIZE);
+    buffer1.draw_size = SFGE_BUF_CHUNK_SIZE;
+    buffer1.draw_count = 0;
+    buffer2.lights = (sgfeLight*)malloc(sizeof(sgfeLight)
+                     * SFGE_BUF_CHUNK_SIZE);
+    buffer2.light_size = SFGE_BUF_CHUNK_SIZE;
+    buffer2.light_count = 0;
+    buffer2.drawables = (sgfeDrawable*)malloc(sizeof(sgfeDrawable)
+                        * SFGE_BUF_CHUNK_SIZE);
+    buffer2.draw_size = SFGE_BUF_CHUNK_SIZE;
+    buffer2.draw_count = 0;
     return 0;
+}
+
+void sgfeResetLights( sgfeRenderBuffers *bufs ) {
+    bufs->light_count = 0;
+}
+
+void sgfeResetDrawables( sgfeRenderBuffers *bufs ) {
+    bufs->draw_count = 0;
+}
+
+sgfeLight * sgfeNextLight( sgfeRenderBuffers *bufs ) {
+    if( bufs->light_count == bufs->light_size ) {
+        bufs->lights = realloc(bufs->lights, sizeof(sgfeLight) * 2);
+        bufs->light_size *= 2;
+        bufs->light_count++;
+        return bufs->lights + bufs->light_count;
+    }
+    else {
+        bufs->light_count++;
+        return bufs->lights + bufs->light_count - 1;
+    }
+}
+
+sgfeDrawable * sgfeNextDrawable( sgfeRenderBuffers *bufs ) {
+    if( bufs->draw_count == bufs->draw_size ) {
+        bufs->drawables = realloc(bufs->drawables, sizeof(sgfeDrawable) * 2);
+        bufs->draw_size *= 2;
+        bufs->draw_count++;
+        return bufs->drawables + bufs->draw_count;
+    }
+    else {
+        bufs->draw_count++;
+        return bufs->drawables + bufs->draw_count - 1;
+    }
 }
 
 /*
@@ -37,17 +91,18 @@ int sgfeInitDrawBuffers( int threads ) {
  * should only be one producer thread. This function must be called before any
  * buffer swaps, or its behavior is undefined.
  */
-sgfeEntity * sgfeGetProducerBuffer() {
-    return buffer1;
+sgfeRenderBuffers * sgfeGetProducerBuffer() {
+    return &buffer1;
 }
 
 /*
  * Get the buffer to be used by a consumer thread. There can be multiple
  * consumer threads running at once, with the caveat that none of them modify
- * the data in the draw buffer.
+ * the data in the draw buffer. This function must be called before any buffer
+ * swaps, or its behavior is undefined.
  */
-sgfeEntity * sgfeGetConsumerBuffer() {
-    return buffer2;
+sgfeRenderBuffers * sgfeGetConsumerBuffer() {
+    return &buffer2;
 }
 
 /*
@@ -68,18 +123,9 @@ void sgfeSignalExit() {
  * new buffer.
  * Returns NULL when an exit has been signaled.
  */
-sgfeEntity * sgfeSwapBuffers( sgfeEntity *buf, int *size ) {
+sgfeRenderBuffers * sgfeSwapBuffers( sgfeRenderBuffers *buf ) {
     mtx_lock(&bufLock);
     /* Before waiting for other threads */
-    /* Buffer size updating is done here so that every thread updates its buffer
-     * before either sleeping or signaling. This guarantees that every buffer
-     * has its size updated by the time all the threads begin working again. */
-    if( buf == buffer1 ) {
-        buffer1_size = *size;
-    }
-    else {
-        buffer2_size = *size;
-    }
     finishedCount++;
     /* Waiting for other threads */
     if( finishedCount == threadCount ) {
@@ -98,13 +144,11 @@ sgfeEntity * sgfeSwapBuffers( sgfeEntity *buf, int *size ) {
     }
     else {
         mtx_unlock(&bufLock);
-        if( buf == buffer1 ) {
-            *size = buffer2_size;
-            return buffer2;
+        if( buf == &buffer1 ) {
+            return &buffer2;
         }
         else {
-            *size = buffer1_size;
-            return buffer1;
+            return &buffer1;
         }
     }
 }

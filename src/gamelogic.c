@@ -81,15 +81,16 @@ static void handleKeyboard( GLFWwindow window, GLfloat *vel, GLfloat *rot ) {
     vel[2] = (v[2] * cosRot) + (v[0] * sinRot);
 }
 
-static void updateActiveEntities( sgfeEntityList *entities ) {
+static void updateDynamicEntities( sgfeEntityList *dynamics ) {
     /* TODO */
-    if( entities ) {}
+    if( dynamics ) {}
 }
 
-int gameLoop( GLFWwindow window, sgfeEntity *player, sgfeEntityList *actives,
-sgfeEntityList *passives ) {
+int gameLoop( GLFWwindow window, sgfeEntity *player, sgfeEntityList *dynamics,
+sgfeEntityList *statics ) {
     double lastTime, currentTime, elapsedTime;
-    sgfeEntity *buffer, *b;
+    sgfeRenderBuffers *buffer;
+    sgfeDrawable *ds;
     sgfeEntityList *e;
     int buf_size;
     buffer = sgfeGetProducerBuffer();
@@ -106,29 +107,54 @@ sgfeEntityList *passives ) {
         }
         handleMouseLook(window, player->rot);
         handleKeyboard(window, player->vel, player->rot);
-        /* Step 3: Let active entities update velocity */
-        updateActiveEntities(actives);
+        /* Step 3: Let dynamic entities update velocity */
+        updateDynamicEntities(dynamics);
         /* Step 4: Collision detection */
         /* TODO */
         /* Step 5: Update positions */
         player->pos[0] += player->vel[0] * elapsedTime;
         player->pos[1] += player->vel[1] * elapsedTime;
         player->pos[2] += player->vel[2] * elapsedTime;
-        /* TODO: Update active entiies */
+        /* TODO: Update dynamic entiies */
         /* Step 6: Populate drawable buffer */
         /* Camera (ie. the player) is always the first entry */
-        memcpy(buffer, player, sizeof(sgfeEntity));
+        sgfeResetDrawables(buffer);
+        ds = sgfeNextDrawable(buffer);
+        ds->pos[0] = player->pos[0];
+        ds->pos[1] = player->pos[1];
+        ds->pos[2] = player->pos[2];
+        ds->rot[0] = player->rot[0];
+        ds->rot[1] = player->rot[1];
+        ds->rot[2] = player->rot[2];
+        ds->set = NULL;
         buf_size = 1;
-        for( b = buffer + 1, e = actives; e; b++, e = e->next ) {
-            memcpy(b, &e->entity, sizeof(sgfeEntity));
+        /* Dynamic entities */
+        for( e = dynamics; e; e = e->next ) {
+            ds = sgfeNextDrawable(buffer);
+            ds->pos[0] = e->entity.pos[0];
+            ds->pos[1] = e->entity.pos[1];
+            ds->pos[2] = e->entity.pos[2];
+            ds->rot[0] = e->entity.rot[0];
+            ds->rot[1] = e->entity.rot[1];
+            ds->rot[2] = e->entity.rot[2];
+            ds->set = e->entity.set;
             buf_size++;
         }
-        for( e = passives; e; b++, e = e->next ) {
-            memcpy(b, &e->entity, sizeof(sgfeEntity));
+        /* Static entities */
+        for( e = statics; e; e = e->next ) {
+            ds = sgfeNextDrawable(buffer);
+            ds->pos[0] = e->entity.pos[0];
+            ds->pos[1] = e->entity.pos[1];
+            ds->pos[2] = e->entity.pos[2];
+            ds->rot[0] = e->entity.rot[0];
+            ds->rot[1] = e->entity.rot[1];
+            ds->rot[2] = e->entity.rot[2];
+            ds->set = e->entity.set;
             buf_size++;
         }
+        /* TODO: Lights */
         /* Step 7: Swap buffers */
-        buffer = sgfeSwapBuffers(buffer, &buf_size);
+        buffer = sgfeSwapBuffers(buffer);
     }
     return 0;
 }

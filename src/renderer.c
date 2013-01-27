@@ -26,8 +26,9 @@ GLFWwindow sgfeCreateWindow() {
 
 int renderLoop( GLFWwindow window, sstProgram *program ) {
     GLfloat proj[16], base[16], model[16];
-    sgfeEntity *buffer, *b;
-    int buf_size, i;
+    sgfeRenderBuffers *buffer;
+    sgfeDrawable *ds;
+    int i;
     buffer = sgfeGetConsumerBuffer();
     sstPerspectiveMatrix_(60.0f, 1.0f, 5.0f, 500.0f, proj);
     sstActivateProgram(program);
@@ -36,30 +37,28 @@ int renderLoop( GLFWwindow window, sstProgram *program ) {
     glViewport(0, 0, 800, 800);
     sstSetUniformData(program, "projectionMatrix", proj);
     /* Gotta sit out the first frame since the first dataset hasn't been made */
-    buf_size = 0;
-    buffer = sgfeSwapBuffers(buffer, &buf_size);
+    buffer = sgfeSwapBuffers(buffer);
     while( buffer ) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         /* First entry in the buffer is the camera */
-        b = buffer;
-        sstRotateMatrixX_(b->rot[1], base);
-        sstRotateMatrixY_(b->rot[0], model);
+        ds = buffer->drawables;
+        sstRotateMatrixX_(ds->rot[1], base);
+        sstRotateMatrixY_(ds->rot[0], model);
         sstMatMult4_(base, model, base);
-        sstTranslateMatrixInto(-b->pos[0], -b->pos[1], -b->pos[2], base);
-        sstSetUniformData(program, "lightPos1", b->pos);
-        sstSetUniformData(program, "cameraPos", b->pos);
+        sstTranslateMatrixInto(-ds->pos[0], -ds->pos[1], -ds->pos[2], base);
+        sstSetUniformData(program, "lightPos1", ds->pos);
+        sstSetUniformData(program, "cameraPos", ds->pos);
         sstSetUniformData(program, "cameraMatrix", base);
         /* Draw everything */
-        b++;
-        for( i = 1; i < buf_size; i++, b++ ) {
-            sstTranslateMatrix_(b->pos[0], b->pos[1], b->pos[2], model);
+        ds++;
+        for( i = 1; i < buffer->draw_count; i++, ds++ ) {
+            sstTranslateMatrix_(ds->pos[0], ds->pos[1], ds->pos[2], model);
             sstSetUniformData(program, "modelTranslate", model);
-            /* TODO: Rotate */
-            sstRotateMatrixX_(b->rot[0], base);
-            sstRotateMatrixY_(b->rot[1], model);
+            sstRotateMatrixX_(ds->rot[0], base);
+            sstRotateMatrixY_(ds->rot[1], model);
             sstMatMult4_(base, model, model);
             sstSetUniformData(program, "modelRotate", model);
-            sstDrawSet(b->set);
+            sstDrawSet(ds->set);
         }
         glFlush();
         glfwSwapBuffers(window);
@@ -69,7 +68,7 @@ int renderLoop( GLFWwindow window, sstProgram *program ) {
          * actually polling will not.
          */
         glfwPollEvents();
-        buffer = sgfeSwapBuffers(buffer, &buf_size);
+        buffer = sgfeSwapBuffers(buffer);
     }
     return 0;
 }
