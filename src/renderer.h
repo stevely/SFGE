@@ -11,6 +11,6 @@
 
 GLFWwindow sgfeCreateWindow();
 
-int renderLoop( GLFWwindow window, sstProgram *program );
+int renderLoop( GLFWwindow window, sstProgram *naked, sstProgram *point );
 
 #endif

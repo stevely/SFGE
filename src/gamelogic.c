@@ -91,8 +91,8 @@ sgfeEntityList *statics ) {
     double lastTime, currentTime, elapsedTime;
     sgfeRenderBuffers *buffer;
     sgfeDrawable *ds;
+    sgfeLight *light;
     sgfeEntityList *e;
-    int buf_size;
     buffer = sgfeGetProducerBuffer();
     lastTime = glfwGetTime();
     while( buffer ) {
@@ -119,6 +119,7 @@ sgfeEntityList *statics ) {
         /* Step 6: Populate drawable buffer */
         /* Camera (ie. the player) is always the first entry */
         sgfeResetDrawables(buffer);
+        sgfeResetLights(buffer);
         ds = sgfeNextDrawable(buffer);
         ds->pos[0] = player->pos[0];
         ds->pos[1] = player->pos[1];
@@ -127,7 +128,6 @@ sgfeEntityList *statics ) {
         ds->rot[1] = player->rot[1];
         ds->rot[2] = player->rot[2];
         ds->set = NULL;
-        buf_size = 1;
         /* Dynamic entities */
         for( e = dynamics; e; e = e->next ) {
             ds = sgfeNextDrawable(buffer);
@@ -138,7 +138,6 @@ sgfeEntityList *statics ) {
             ds->rot[1] = e->entity.rot[1];
             ds->rot[2] = e->entity.rot[2];
             ds->set = e->entity.set;
-            buf_size++;
         }
         /* Static entities */
         for( e = statics; e; e = e->next ) {
@@ -150,9 +149,19 @@ sgfeEntityList *statics ) {
             ds->rot[1] = e->entity.rot[1];
             ds->rot[2] = e->entity.rot[2];
             ds->set = e->entity.set;
-            buf_size++;
         }
         /* TODO: Lights */
+        /* Simple point light on the player */
+        light = sgfeNextLight(buffer);
+        light->type = pointL;
+        light->light.point.color[0] = 1.0f;
+        light->light.point.color[1] = 1.0f;
+        light->light.point.color[2] = 1.0f;
+        light->light.point.pos[0] = player->pos[0];
+        light->light.point.pos[1] = player->pos[1];
+        light->light.point.pos[2] = player->pos[2];
+        light->light.point.r_end = 200.0f;
+        light->light.point.r_start = 100.0f;
         /* Step 7: Swap buffers */
         buffer = sgfeSwapBuffers(buffer);
     }

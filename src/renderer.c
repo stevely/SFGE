@@ -24,41 +24,84 @@ GLFWwindow sgfeCreateWindow() {
     return window;
 }
 
-int renderLoop( GLFWwindow window, sstProgram *program ) {
-    GLfloat proj[16], base[16], model[16];
-    sgfeRenderBuffers *buffer;
+static void render( GLfloat *proj, sgfeRenderBuffers *buffer,
+sstProgram *program ) {
+    GLfloat base[16], model[16];
     sgfeDrawable *ds;
     int i;
+    sstSetUniformData(program, "projectionMatrix", proj);
+    /* First entry in the buffer is the camera */
+    ds = buffer->drawables;
+    sstRotateMatrixX_(ds->rot[1], base);
+    sstRotateMatrixY_(ds->rot[0], model);
+    sstMatMult4_(base, model, base);
+    sstTranslateMatrixInto(-ds->pos[0], -ds->pos[1], -ds->pos[2], base);
+    sstSetUniformData(program, "cameraPos", ds->pos);
+    sstSetUniformData(program, "cameraMatrix", base);
+    /* Draw everything */
+    ds++;
+    for( i = 1; i < buffer->draw_count; i++ ) {
+        sstTranslateMatrix_(ds->pos[0], ds->pos[1], ds->pos[2], model);
+        sstSetUniformData(program, "modelTranslate", model);
+        sstRotateMatrixX_(ds->rot[0], base);
+        sstRotateMatrixY_(ds->rot[1], model);
+        sstMatMult4_(base, model, model);
+        sstSetUniformData(program, "modelRotate", model);
+        sstDrawSet(ds->set);
+        ds++;
+    }
+}
+
+int renderLoop( GLFWwindow window, sstProgram *naked, sstProgram *point ) {
+    GLfloat proj[16];
+    sgfeRenderBuffers *buffer;
+    sgfeLight *light;
+    int i;
+    sstProgram *program;
+    program = NULL;
     buffer = sgfeGetConsumerBuffer();
     sstPerspectiveMatrix_(60.0f, 1.0f, 5.0f, 500.0f, proj);
-    sstActivateProgram(program);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glViewport(0, 0, 800, 800);
-    sstSetUniformData(program, "projectionMatrix", proj);
+    glBlendFunc(GL_ONE, GL_ONE);
     /* Gotta sit out the first frame since the first dataset hasn't been made */
     buffer = sgfeSwapBuffers(buffer);
     while( buffer ) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        /* First entry in the buffer is the camera */
-        ds = buffer->drawables;
-        sstRotateMatrixX_(ds->rot[1], base);
-        sstRotateMatrixY_(ds->rot[0], model);
-        sstMatMult4_(base, model, base);
-        sstTranslateMatrixInto(-ds->pos[0], -ds->pos[1], -ds->pos[2], base);
-        sstSetUniformData(program, "lightPos1", ds->pos);
-        sstSetUniformData(program, "cameraPos", ds->pos);
-        sstSetUniformData(program, "cameraMatrix", base);
-        /* Draw everything */
-        ds++;
-        for( i = 1; i < buffer->draw_count; i++, ds++ ) {
-            sstTranslateMatrix_(ds->pos[0], ds->pos[1], ds->pos[2], model);
-            sstSetUniformData(program, "modelTranslate", model);
-            sstRotateMatrixX_(ds->rot[0], base);
-            sstRotateMatrixY_(ds->rot[1], model);
-            sstMatMult4_(base, model, model);
-            sstSetUniformData(program, "modelRotate", model);
-            sstDrawSet(ds->set);
+        /* We use multiple render passes to draw the scene. To speed things up
+         * we first run a "naked" pass that does no work beyond geometry
+         * transformations to establish the depth buffer and eliminate over-
+         * draw. */
+        /* TODO: Set up multiple shader programs */
+        if( naked ) {
+            glDepthFunc(GL_LESS);
+            render(proj, buffer, naked);
+            glDepthFunc(GL_EQUAL);
+        }
+        /* Time to render the scene for every light source */
+        light = buffer->lights;
+        for( i = 0; i < buffer->light_count; i++ ) {
+            switch( light->type ) {
+            case pointL:
+                if( program != point ) {
+                    sstActivateProgram(point);
+                }
+                program = point;
+                sstSetUniformData(point, "lightPos1", light->light.point.pos);
+                sstSetUniformData(point, "lightColor1", light->light.point.color);
+                sstSetUniformData(point, "lightStart1", &light->light.point.r_start);
+                sstSetUniformData(point, "lightEnd1", &light->light.point.r_end);
+                break;
+            case directionalL:
+            case spotlightL:
+            case noneL:
+            default:
+                program = point;
+                break;
+            }
+            render(proj, buffer, program);
+            light++;
         }
         glFlush();
         glfwSwapBuffers(window);

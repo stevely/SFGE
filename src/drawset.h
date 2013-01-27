@@ -43,10 +43,10 @@ typedef struct {
 
 typedef struct {
     enum {
-        directional,
-        point,
-        spotlight,
-        none
+        directionalL,
+        pointL,
+        spotlightL,
+        noneL
     } type;
     union {
         sgfeDirectionalLight directional;

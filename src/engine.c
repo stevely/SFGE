@@ -17,7 +17,7 @@
 /* Setup */
 
 static int rendererSetup( GLFWwindow window, sstProgram *program ) {
-    return renderLoop(window, program);
+    return renderLoop(window, NULL, program);
 }
 
 static void populateFloatTriplets( GLfloat *values, sdfNode *data ) {
@@ -275,6 +275,7 @@ static sstProgram * extractProgram( sdfNode *tree ) {
         printf("Found no shader programs!\n");
         return NULL;
     }
+    node = getChildren(node, "point");
     /* Get vertex shaders */
     subnode = getChildren(node, "vertex");
     if( !subnode ) {
