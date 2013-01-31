@@ -14,7 +14,7 @@ BUILD= build
 LIBDIR= lib
 
 # Sources
-SFGE_S= engine.c renderer.c gamelogic.c drawset.c
+SFGE_S= engine.c renderer.c gamelogic.c drawset.c messages.c
 
 # Final executable
 SFGE= game

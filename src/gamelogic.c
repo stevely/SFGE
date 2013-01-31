@@ -156,7 +156,7 @@ sgfeEntityList *statics ) {
         light->type = pointL;
         light->light.point.color[0] = 1.0f;
         light->light.point.color[1] = 1.0f;
-        light->light.point.color[2] = 1.0f;
+        light->light.point.color[2] = 0.5f;
         light->light.point.pos[0] = player->pos[0];
         light->light.point.pos[1] = player->pos[1];
         light->light.point.pos[2] = player->pos[2];
