@@ -6,22 +6,22 @@
 #ifndef MESSAGES_H_
 #define MESSAGES_H_
 
-typedef int sgfeChannel;
+typedef int sfgeChannel;
 
 int sfgeMessengerStart();
 
-sgfeChannel sgfeRegisterChannel( const char *id );
+sfgeChannel sfgeRegisterChannel( const char *id );
 
-sgfeChannel sgfeGetChannel( const char *id );
+sfgeChannel sfgeGetChannel( const char *id );
 
-sgfeChannel sgfeRequireChannel( const char *id );
+sfgeChannel sfgeRequireChannel( const char *id );
 
-int sgfeReadChannel( sgfeChannel channel, void *data, int size );
+int sfgeReadChannel( sfgeChannel channel, void *data, int size );
 
-int sgfeReadChannelBlocking( sgfeChannel channel, void *data, int size );
+int sfgeReadChannelBlocking( sfgeChannel channel, void *data, int size );
 
-int sgfeWriteChannel( sgfeChannel channel, void *data, int size );
+int sfgeWriteChannel( sfgeChannel channel, void *data, int size );
 
-int sgfeWriteChannelBlocking( sgfeChannel channel, void *data, int size );
+int sfgeWriteChannelBlocking( sfgeChannel channel, void *data, int size );
 
 #endif

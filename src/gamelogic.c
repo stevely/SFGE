@@ -81,19 +81,19 @@ static void handleKeyboard( GLFWwindow window, GLfloat *vel, GLfloat *rot ) {
     vel[2] = (v[2] * cosRot) + (v[0] * sinRot);
 }
 
-static void updateDynamicEntities( sgfeEntityList *dynamics ) {
+static void updateDynamicEntities( sfgeEntityList *dynamics ) {
     /* TODO */
     if( dynamics ) {}
 }
 
-int gameLoop( GLFWwindow window, sgfeEntity *player, sgfeEntityList *dynamics,
-sgfeEntityList *statics ) {
+int gameLoop( GLFWwindow window, sfgeEntity *player, sfgeEntityList *dynamics,
+sfgeEntityList *statics ) {
     double lastTime, currentTime, elapsedTime;
-    sgfeRenderBuffers *buffer;
-    sgfeDrawable *ds;
-    sgfeLight *light;
-    sgfeEntityList *e;
-    buffer = sgfeGetProducerBuffer();
+    sfgeRenderBuffers *buffer;
+    sfgeDrawable *ds;
+    sfgeLight *light;
+    sfgeEntityList *e;
+    buffer = sfgeGetProducerBuffer();
     lastTime = glfwGetTime();
     while( buffer ) {
         /* Step 1: Set up the clock */
@@ -103,7 +103,7 @@ sgfeEntityList *statics ) {
         /* Step 2: Handle input */
         /*glfwPollEvents();*/
         if( isQuitting(window) ) {
-            sgfeSignalExit();
+            sfgeSignalExit();
         }
         handleMouseLook(window, player->rot);
         handleKeyboard(window, player->vel, player->rot);
@@ -118,9 +118,9 @@ sgfeEntityList *statics ) {
         /* TODO: Update dynamic entiies */
         /* Step 6: Populate drawable buffer */
         /* Camera (ie. the player) is always the first entry */
-        sgfeResetDrawables(buffer);
-        sgfeResetLights(buffer);
-        ds = sgfeNextDrawable(buffer);
+        sfgeResetDrawables(buffer);
+        sfgeResetLights(buffer);
+        ds = sfgeNextDrawable(buffer);
         ds->pos[0] = player->pos[0];
         ds->pos[1] = player->pos[1];
         ds->pos[2] = player->pos[2];
@@ -130,7 +130,7 @@ sgfeEntityList *statics ) {
         ds->set = NULL;
         /* Dynamic entities */
         for( e = dynamics; e; e = e->next ) {
-            ds = sgfeNextDrawable(buffer);
+            ds = sfgeNextDrawable(buffer);
             ds->pos[0] = e->entity.pos[0];
             ds->pos[1] = e->entity.pos[1];
             ds->pos[2] = e->entity.pos[2];
@@ -141,7 +141,7 @@ sgfeEntityList *statics ) {
         }
         /* Static entities */
         for( e = statics; e; e = e->next ) {
-            ds = sgfeNextDrawable(buffer);
+            ds = sfgeNextDrawable(buffer);
             ds->pos[0] = e->entity.pos[0];
             ds->pos[1] = e->entity.pos[1];
             ds->pos[2] = e->entity.pos[2];
@@ -152,7 +152,7 @@ sgfeEntityList *statics ) {
         }
         /* TODO: Lights */
         /* Simple point light on the player */
-        light = sgfeNextLight(buffer);
+        light = sfgeNextLight(buffer);
         light->type = pointL;
         light->light.point.color[0] = 1.0f;
         light->light.point.color[1] = 1.0f;
@@ -163,7 +163,7 @@ sgfeEntityList *statics ) {
         light->light.point.r_end = 200.0f;
         light->light.point.r_start = 100.0f;
         /* Step 7: Swap buffers */
-        buffer = sgfeSwapBuffers(buffer);
+        buffer = sfgeSwapBuffers(buffer);
     }
     return 0;
 }

@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "renderer.h"
 
-GLFWwindow sgfeCreateWindow() {
+GLFWwindow sfgeCreateWindow() {
     GLFWwindow window;
     /* Hard-coded values for now */
     glfwDefaultWindowHints();
@@ -14,7 +14,7 @@ GLFWwindow sgfeCreateWindow() {
     glfwWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    window = glfwCreateWindow(800, 800, GLFW_WINDOWED, "SGFE Window", NULL);
+    window = glfwCreateWindow(800, 800, GLFW_WINDOWED, "sfge Window", NULL);
     if( window == NULL ) {
         printf("Failed to open window!\n");
         printf("Error: %s\n", glfwErrorString(glfwGetError()));
@@ -24,10 +24,10 @@ GLFWwindow sgfeCreateWindow() {
     return window;
 }
 
-static void render( GLfloat *proj, sgfeRenderBuffers *buffer,
+static void render( GLfloat *proj, sfgeRenderBuffers *buffer,
 sstProgram *program ) {
     GLfloat base[16], model[16];
-    sgfeDrawable *ds;
+    sfgeDrawable *ds;
     int i;
     sstSetUniformData(program, "projectionMatrix", proj);
     /* First entry in the buffer is the camera */
@@ -54,19 +54,19 @@ sstProgram *program ) {
 
 int renderLoop( GLFWwindow window, sstProgram *naked, sstProgram *point ) {
     GLfloat proj[16];
-    sgfeRenderBuffers *buffer;
-    sgfeLight *light;
+    sfgeRenderBuffers *buffer;
+    sfgeLight *light;
     int i;
     sstProgram *program;
     program = NULL;
-    buffer = sgfeGetConsumerBuffer();
+    buffer = sfgeGetConsumerBuffer();
     sstPerspectiveMatrix_(60.0f, 1.0f, 5.0f, 500.0f, proj);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glViewport(0, 0, 800, 800);
     glBlendFunc(GL_ONE, GL_ONE);
     /* Gotta sit out the first frame since the first dataset hasn't been made */
-    buffer = sgfeSwapBuffers(buffer);
+    buffer = sfgeSwapBuffers(buffer);
     while( buffer ) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         /* We use multiple render passes to draw the scene. To speed things up
@@ -111,7 +111,7 @@ int renderLoop( GLFWwindow window, sstProgram *naked, sstProgram *point ) {
          * actually polling will not.
          */
         glfwPollEvents();
-        buffer = sgfeSwapBuffers(buffer);
+        buffer = sfgeSwapBuffers(buffer);
     }
     return 0;
 }

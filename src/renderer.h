@@ -9,7 +9,7 @@
 #include "sst.h"
 #include "drawset.h"
 
-GLFWwindow sgfeCreateWindow();
+GLFWwindow sfgeCreateWindow();
 
 int renderLoop( GLFWwindow window, sstProgram *naked, sstProgram *point );
 

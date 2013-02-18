@@ -19,12 +19,12 @@ typedef struct {
     cnd_t readCond;
     cnd_t writeCond;
     mtx_t mutex;
-} sgfeChan;
+} sfgeChan;
 
 static mtx_t messengerLock;
 static cnd_t requireCond;
 
-static sgfeChan channels[10]; /* TODO: Dynamic resizing */
+static sfgeChan channels[10]; /* TODO: Dynamic resizing */
 static int channelCount;
 
 int sfgeMessengerStart() {
@@ -34,7 +34,7 @@ int sfgeMessengerStart() {
     return 1;
 }
 
-sgfeChannel sgfeRegisterChannel( const char *id ) {
+sfgeChannel sfgeRegisterChannel( const char *id ) {
     int c;
     mtx_lock(&messengerLock);
     c = channelCount;
@@ -53,7 +53,7 @@ sgfeChannel sgfeRegisterChannel( const char *id ) {
     return c;
 }
 
-sgfeChannel sgfeGetChannel( const char *id ) {
+sfgeChannel sfgeGetChannel( const char *id ) {
     int i;
     mtx_lock(&messengerLock);
     for( i = 0; i < channelCount; i++ ) {
@@ -66,7 +66,7 @@ sgfeChannel sgfeGetChannel( const char *id ) {
     return -1;
 }
 
-sgfeChannel sgfeRequireChannel( const char *id ) {
+sfgeChannel sfgeRequireChannel( const char *id ) {
     int i;
     mtx_lock(&messengerLock);
     while( 1 ) {
@@ -83,7 +83,7 @@ sgfeChannel sgfeRequireChannel( const char *id ) {
     return -1;
 }
 
-/* Dev note about sgfeRead/WriteChannel[Blocking]:
+/* Dev note about sfgeRead/WriteChannel[Blocking]:
  * cnd_broadcast is used when both reading and writing.
  * In the case of reading, there's no technical reason why multiple threads
  * couldn't be reading from a single channel (This would make things such as
@@ -102,9 +102,9 @@ sgfeChannel sgfeRequireChannel( const char *id ) {
  * to also occur.
  */
 
-int sgfeReadChannel( sgfeChannel channel, void *data, int size ) {
+int sfgeReadChannel( sfgeChannel channel, void *data, int size ) {
     char i;
-    sgfeChan chan;
+    sfgeChan chan;
     if( channel < channelCount ) {
         chan = channels[channel];
         mtx_lock(&chan.mutex);
@@ -148,9 +148,9 @@ int sgfeReadChannel( sgfeChannel channel, void *data, int size ) {
     }
 }
 
-int sgfeReadChannelBlocking( sgfeChannel channel, void *data, int size ) {
+int sfgeReadChannelBlocking( sfgeChannel channel, void *data, int size ) {
     char i;
-    sgfeChan chan;
+    sfgeChan chan;
     if( channel < channelCount ) {
         chan = channels[channel];
         mtx_lock(&chan.mutex);
@@ -207,8 +207,8 @@ int sgfeReadChannelBlocking( sgfeChannel channel, void *data, int size ) {
     }
 }
 
-int sgfeWriteChannel( sgfeChannel channel, void *data, int size ) {
-    sgfeChan chan;
+int sfgeWriteChannel( sfgeChannel channel, void *data, int size ) {
+    sfgeChan chan;
     if( channel < channelCount ) {
         chan = channels[channel];
         mtx_lock(&chan.mutex);
@@ -239,8 +239,8 @@ int sgfeWriteChannel( sgfeChannel channel, void *data, int size ) {
     }
 }
 
-int sgfeWriteChannelBlocking( sgfeChannel channel, void *data, int size ) {
-    sgfeChan chan;
+int sfgeWriteChannelBlocking( sfgeChannel channel, void *data, int size ) {
+    sfgeChan chan;
     if( channel < channelCount ) {
         chan = channels[channel];
         mtx_lock(&chan.mutex);

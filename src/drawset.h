@@ -13,25 +13,25 @@ typedef struct {
     GLfloat vel[3];
     GLfloat rot[3];
     sstDrawableSet *set;
-} sgfeEntity;
+} sfgeEntity;
 
 typedef struct {
     GLfloat pos[3];
     GLfloat rot[3];
     sstDrawableSet *set;
-} sgfeDrawable;
+} sfgeDrawable;
 
 typedef struct {
     GLfloat dir[3];
     GLfloat color[3];
-} sgfeDirectionalLight;
+} sfgeDirectionalLight;
 
 typedef struct {
     GLfloat pos[3];
     GLfloat color[3];
     GLfloat r_start; /* Distance to begin falloff */
     GLfloat r_end; /* Max light distance */
-} sgfePointLight;
+} sfgePointLight;
 
 typedef struct {
     GLfloat pos[3];
@@ -39,7 +39,7 @@ typedef struct {
     GLfloat color[3];
     GLfloat penumbra; /* Angle to begin falloff */
     GLfloat umbra; /* Max angle illuminated */
-} sgfeSpotlight;
+} sfgeSpotlight;
 
 typedef struct {
     enum {
@@ -49,60 +49,60 @@ typedef struct {
         noneL
     } type;
     union {
-        sgfeDirectionalLight directional;
-        sgfePointLight point;
-        sgfeSpotlight spotlight;
+        sfgeDirectionalLight directional;
+        sfgePointLight point;
+        sfgeSpotlight spotlight;
     } light;
-} sgfeLight;
+} sfgeLight;
 
 typedef struct {
-    sgfeLight *lights;
-    sgfeDrawable *drawables;
+    sfgeLight *lights;
+    sfgeDrawable *drawables;
     int light_count; /* count = Number of filled slots */
     int draw_count;
     /* These fields should only be modified by code in drawset.c */
     int light_size; /* size = Total size of buffer */
     int draw_size;
-} sgfeRenderBuffers;
+} sfgeRenderBuffers;
 
-typedef struct sgfeEntityList {
-    sgfeEntity entity;
-    struct sgfeEntityList *next;
-} sgfeEntityList;
+typedef struct sfgeEntityList {
+    sfgeEntity entity;
+    struct sfgeEntityList *next;
+} sfgeEntityList;
 
 /*
  * Initializes the draw buffers for the given number of threads.
  */
-int sgfeInitDrawBuffers();
+int sfgeInitDrawBuffers();
 
-void sgfeResetLights( sgfeRenderBuffers *bufs );
+void sfgeResetLights( sfgeRenderBuffers *bufs );
 
-void sgfeResetDrawables( sgfeRenderBuffers *bufs );
+void sfgeResetDrawables( sfgeRenderBuffers *bufs );
 
-sgfeLight * sgfeNextLight( sgfeRenderBuffers *bufs );
+sfgeLight * sfgeNextLight( sfgeRenderBuffers *bufs );
 
-sgfeDrawable * sgfeNextDrawable( sgfeRenderBuffers *bufs );
+sfgeDrawable * sfgeNextDrawable( sfgeRenderBuffers *bufs );
 
 /*
  * Get the buffer to be used by the producer thread. For obvious reasons, there
  * should only be one producer thread. This function must be called before any
  * buffer swaps, or its behavior is undefined.
  */
-sgfeRenderBuffers * sgfeGetProducerBuffer();
+sfgeRenderBuffers * sfgeGetProducerBuffer();
 
 /*
  * Get the buffer to be used by a consumer thread. There can be multiple
  * consumer threads running at once, with the caveat that none of them modify
  * the data in the draw buffer.
  */
-sgfeRenderBuffers * sgfeGetConsumerBuffer();
+sfgeRenderBuffers * sfgeGetConsumerBuffer();
 
 /*
- * Signal to the other threads that they should exit. sgfeSwapBuffers() must be
+ * Signal to the other threads that they should exit. sfgeSwapBuffers() must be
  * called before the signalling thread can exit to ensure that every thread is
  * notified.
  */
-void sgfeSignalExit();
+void sfgeSignalExit();
 
 /*
  * Thread-safe function for swapping between the two entity buffers. The second
@@ -111,6 +111,6 @@ void sgfeSignalExit();
  * new buffer.
  * Returns NULL when an exit has been signaled.
  */
-sgfeRenderBuffers * sgfeSwapBuffers( sgfeRenderBuffers *buf );
+sfgeRenderBuffers * sfgeSwapBuffers( sfgeRenderBuffers *buf );
 
 #endif

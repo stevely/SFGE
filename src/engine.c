@@ -34,7 +34,7 @@ static void populateFloatTriplets( GLfloat *values, sdfNode *data ) {
     }
 }
 
-static void populateEntity( sgfeEntity *entity, sdfNode *data,
+static void populateEntity( sfgeEntity *entity, sdfNode *data,
 sstDrawableSet **sets, char **setNames, int setCount ) {
     sdfNode *n;
     int i;
@@ -74,13 +74,13 @@ struct gamelogicArgs {
 
 static int gameLogicSetup( void *arguments ) {
     struct gamelogicArgs *args;
-    sgfeEntity player;
+    sfgeEntity player;
     sdfNode *data, *d;
     sstDrawableSet **sets;
     char **setNames;
     int setCount;
-    sgfeEntityList *dynamics, *d_end;
-    sgfeEntityList *statics, *s_end; /* static's a keyword... */
+    sfgeEntityList *dynamics, *d_end;
+    sfgeEntityList *statics, *s_end; /* static's a keyword... */
     dynamics = d_end = statics = s_end = NULL;
     /* Step 1: Get our args */
     args = (struct gamelogicArgs*)arguments;
@@ -95,11 +95,11 @@ static int gameLogicSetup( void *arguments ) {
     /* Step 3: Populate dynamics entities */
     for( d = getChildren(data, "dynamic"); d; d = d->next ) {
         if( dynamics == NULL ) {
-            dynamics = d_end = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            dynamics = d_end = (sfgeEntityList*)malloc(sizeof(sfgeEntityList));
             d_end->next = NULL;
         }
         else {
-            d_end->next = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            d_end->next = (sfgeEntityList*)malloc(sizeof(sfgeEntityList));
             d_end = d_end->next;
             d_end->next = NULL;
         }
@@ -108,11 +108,11 @@ static int gameLogicSetup( void *arguments ) {
     /* Step 4: Populate static entities */
     for( d = getChildren(data, "static"); d; d = d->next ) {
         if( statics == NULL ) {
-            statics = s_end = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            statics = s_end = (sfgeEntityList*)malloc(sizeof(sfgeEntityList));
             s_end->next = NULL;
         }
         else {
-            s_end->next = (sgfeEntityList*)malloc(sizeof(sgfeEntityList));
+            s_end->next = (sfgeEntityList*)malloc(sizeof(sfgeEntityList));
             s_end = s_end->next;
             s_end->next = NULL;
         }
@@ -130,7 +130,7 @@ sstDrawableSet **sets, char **setNames, int setCount) {
     args.sets = sets;
     args.setNames = setNames;
     args.setCount = setCount;
-    sgfeInitDrawBuffers(2);
+    sfgeInitDrawBuffers(2);
     thrd_create(&logicThread, gameLogicSetup, &args);
     rendererSetup(window, program);
     thrd_join(logicThread, NULL);
@@ -325,7 +325,7 @@ int dataSetup( GLFWwindow window, const char *filepath ) {
 int glfwContext( char *filepath ) {
     GLFWwindow window;
     int result;
-    window = sgfeCreateWindow();
+    window = sfgeCreateWindow();
     if( window ) {
         result = dataSetup(window, filepath);
     }

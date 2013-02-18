@@ -9,7 +9,7 @@
 #include "sst.h"
 #include "drawset.h"
 
-int gameLoop( GLFWwindow window, sgfeEntity *player, sgfeEntityList *actives,
-sgfeEntityList *passives );
+int gameLoop( GLFWwindow window, sfgeEntity *player, sfgeEntityList *actives,
+sfgeEntityList *passives );
 
 #endif

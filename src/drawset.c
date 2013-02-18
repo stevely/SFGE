@@ -8,8 +8,8 @@
 #include "tinycthread.h"
 
 /* The draw buffers */
-static sgfeRenderBuffers buffer1;
-static sgfeRenderBuffers buffer2;
+static sfgeRenderBuffers buffer1;
+static sfgeRenderBuffers buffer2;
 
 /* We store pointers to the last element of the last buffer for each buffer,
  * allowing us to see when we need to allocate memory. */
@@ -25,7 +25,7 @@ static int signalExit = 0;
 /*
  * Initializes the draw buffers for the given number of threads.
  */
-int sgfeInitDrawBuffers( int threads ) {
+int sfgeInitDrawBuffers( int threads ) {
     threadCount = threads;
     if( mtx_init(&bufLock, mtx_plain) != thrd_success ) {
         return -1;
@@ -33,36 +33,36 @@ int sgfeInitDrawBuffers( int threads ) {
     if( cnd_init(&bufCond) != thrd_success ) {
         return -1;
     }
-    buffer1.lights = (sgfeLight*)malloc(sizeof(sgfeLight)
+    buffer1.lights = (sfgeLight*)malloc(sizeof(sfgeLight)
                      * SFGE_BUF_CHUNK_SIZE);
     buffer1.light_size = SFGE_BUF_CHUNK_SIZE;
     buffer1.light_count = 0;
-    buffer1.drawables = (sgfeDrawable*)malloc(sizeof(sgfeDrawable)
+    buffer1.drawables = (sfgeDrawable*)malloc(sizeof(sfgeDrawable)
                         * SFGE_BUF_CHUNK_SIZE);
     buffer1.draw_size = SFGE_BUF_CHUNK_SIZE;
     buffer1.draw_count = 0;
-    buffer2.lights = (sgfeLight*)malloc(sizeof(sgfeLight)
+    buffer2.lights = (sfgeLight*)malloc(sizeof(sfgeLight)
                      * SFGE_BUF_CHUNK_SIZE);
     buffer2.light_size = SFGE_BUF_CHUNK_SIZE;
     buffer2.light_count = 0;
-    buffer2.drawables = (sgfeDrawable*)malloc(sizeof(sgfeDrawable)
+    buffer2.drawables = (sfgeDrawable*)malloc(sizeof(sfgeDrawable)
                         * SFGE_BUF_CHUNK_SIZE);
     buffer2.draw_size = SFGE_BUF_CHUNK_SIZE;
     buffer2.draw_count = 0;
     return 0;
 }
 
-void sgfeResetLights( sgfeRenderBuffers *bufs ) {
+void sfgeResetLights( sfgeRenderBuffers *bufs ) {
     bufs->light_count = 0;
 }
 
-void sgfeResetDrawables( sgfeRenderBuffers *bufs ) {
+void sfgeResetDrawables( sfgeRenderBuffers *bufs ) {
     bufs->draw_count = 0;
 }
 
-sgfeLight * sgfeNextLight( sgfeRenderBuffers *bufs ) {
+sfgeLight * sfgeNextLight( sfgeRenderBuffers *bufs ) {
     if( bufs->light_count == bufs->light_size ) {
-        bufs->lights = realloc(bufs->lights, sizeof(sgfeLight) * 2);
+        bufs->lights = realloc(bufs->lights, sizeof(sfgeLight) * 2);
         bufs->light_size *= 2;
         bufs->light_count++;
         return bufs->lights + bufs->light_count;
@@ -73,9 +73,9 @@ sgfeLight * sgfeNextLight( sgfeRenderBuffers *bufs ) {
     }
 }
 
-sgfeDrawable * sgfeNextDrawable( sgfeRenderBuffers *bufs ) {
+sfgeDrawable * sfgeNextDrawable( sfgeRenderBuffers *bufs ) {
     if( bufs->draw_count == bufs->draw_size ) {
-        bufs->drawables = realloc(bufs->drawables, sizeof(sgfeDrawable) * 2);
+        bufs->drawables = realloc(bufs->drawables, sizeof(sfgeDrawable) * 2);
         bufs->draw_size *= 2;
         bufs->draw_count++;
         return bufs->drawables + bufs->draw_count;
@@ -91,7 +91,7 @@ sgfeDrawable * sgfeNextDrawable( sgfeRenderBuffers *bufs ) {
  * should only be one producer thread. This function must be called before any
  * buffer swaps, or its behavior is undefined.
  */
-sgfeRenderBuffers * sgfeGetProducerBuffer() {
+sfgeRenderBuffers * sfgeGetProducerBuffer() {
     return &buffer1;
 }
 
@@ -101,16 +101,16 @@ sgfeRenderBuffers * sgfeGetProducerBuffer() {
  * the data in the draw buffer. This function must be called before any buffer
  * swaps, or its behavior is undefined.
  */
-sgfeRenderBuffers * sgfeGetConsumerBuffer() {
+sfgeRenderBuffers * sfgeGetConsumerBuffer() {
     return &buffer2;
 }
 
 /*
- * Signal to the other threads that they should exit. sgfeSwapBuffers() must be
+ * Signal to the other threads that they should exit. sfgeSwapBuffers() must be
  * called before the signalling thread can exit to ensure that every thread is
  * notified.
  */
-void sgfeSignalExit() {
+void sfgeSignalExit() {
     mtx_lock(&bufLock);
     signalExit = 1;
     mtx_unlock(&bufLock);
@@ -123,7 +123,7 @@ void sgfeSignalExit() {
  * new buffer.
  * Returns NULL when an exit has been signaled.
  */
-sgfeRenderBuffers * sgfeSwapBuffers( sgfeRenderBuffers *buf ) {
+sfgeRenderBuffers * sfgeSwapBuffers( sfgeRenderBuffers *buf ) {
     mtx_lock(&bufLock);
     /* Before waiting for other threads */
     finishedCount++;
